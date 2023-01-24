@@ -14,32 +14,38 @@ router.post(
     .isLength({ min: 4, max: 20 })
     .withMessage("Password must be between 4 and 20 characters"),
   async (req: Request, res: Response) => {
-    const errors = validationResult(req)
+    try {
+      const errors = validationResult(req)
+      if (!errors.isEmpty()) {
+        throw new RequestValidationError(errors.array())
+      }
 
-    console.log(errors)
+      const { email, password } = req.body
 
-    if (!errors.isEmpty()) {
-      // res.send(errors)
-      throw new RequestValidationError(errors.array())
+      const existingUser = await User.findOne({ email })
+
+      if (existingUser) {
+        console.log("Email in use")
+        return res
+          .status(422)
+          .json({ errors: [{ msg: "Email is already in use" }] })
+      }
+
+      const user = User.build({
+        email,
+        password,
+      })
+
+      await user.save()
+      res.status(201).send(user)
+    } catch (err) {
+      if (err instanceof RequestValidationError) {
+        return res.status(400).json({ errors: err.message })
+      } else {
+        console.error(err)
+        res.status(500).send("Server Error")
+      }
     }
-
-    const { email, password } = req.body
-
-    const existingUser = await User.findOne({ email })
-
-    if (existingUser) {
-      console.log("Email in use")
-      return res.send({})
-    }
-
-    const user = User.build({
-      email,
-      password,
-    })
-
-    await user.save()
-    res.status(201).send(user)
-    // res.status(201).send("created")
   }
 )
 
