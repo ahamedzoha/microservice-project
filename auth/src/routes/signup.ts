@@ -1,4 +1,4 @@
-import express, { NextFunction, Request, Response } from "express"
+import express, { Request, Response } from "express"
 import { body, validationResult } from "express-validator"
 import { RequestValidationError } from "../errors/"
 import { User } from "../models"
@@ -40,7 +40,7 @@ router.post(
       res.status(201).send(user)
     } catch (err) {
       if (err instanceof RequestValidationError) {
-        return res.status(400).json({ errors: err.message })
+        return res.status(400).json({ errors: [{ message: err.message }] })
       } else {
         console.error(err)
         res.status(500).send("Server Error")
